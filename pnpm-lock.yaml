@@ -3,6 +3,8 @@ lockfileVersion: 5.4
 specifiers:
   '@discordjs/rest': ^1.4.0
   '@prisma/client': ^4.7.1
+  '@trpc/client': ^10.5.0
+  '@trpc/server': ^10.5.0
   '@types/cors': ^2.8.13
   '@types/express': ^4.17.14
   '@types/node': ^18.11.14
@@ -18,16 +20,20 @@ specifiers:
   ts-node: ^10.9.1
   ts-node-dev: ^2.0.0
   typescript: ^4.9.4
+  zod: ^3.20.2
 
 dependencies:
   '@discordjs/rest': 1.4.0
   '@prisma/client': 4.7.1_prisma@4.7.1
+  '@trpc/client': 10.5.0_@trpc+server@10.5.0
+  '@trpc/server': 10.5.0
   '@types/cors': 2.8.13
   cors: 2.8.5
   discord.js: 14.7.1
   dotenv: 16.0.3
   express: 4.18.2
   typescript: 4.9.4
+  zod: 3.20.2
 
 devDependencies:
   '@types/express': 4.17.14
@@ -201,6 +207,18 @@ packages:
 
   /@tokenizer/token/0.3.0:
     resolution: {integrity: sha512-OvjF+z51L3ov0OyAU0duzsYuvO01PH7x4t6DJx+guahgTnBHkhJdG7soQeTSFLWN3efnHyibZ4Z8l2EuWwJN3A==}
+    dev: false
+
+  /@trpc/client/10.5.0_@trpc+server@10.5.0:
+    resolution: {integrity: sha512-ULRL6YUi/4sMzZnqS3VCe/VduPZgY24wdC4canpwWZfHj+O0kHz3KR260DzEw0QrpLrOwmkIWOlQKzVBn2lLgQ==}
+    peerDependencies:
+      '@trpc/server': 10.5.0
+    dependencies:
+      '@trpc/server': 10.5.0
+    dev: false
+
+  /@trpc/server/10.5.0:
+    resolution: {integrity: sha512-AJ4ckDpnN8xuqWBox68KDTFpG12ZxKkW7fi9XJ+TLtyyNyqOMVUvKH9070CdxhqBZjebTASryE+/6lntkDFQxA==}
     dev: false
 
   /@tsconfig/node10/1.0.9:
@@ -1952,3 +1970,7 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
     dev: true
+
+  /zod/3.20.2:
+    resolution: {integrity: sha512-1MzNQdAvO+54H+EaK5YpyEy0T+Ejo/7YLHS93G3RnYWh5gaotGHwGeN/ZO687qEDU2y4CdStQYXVHIgrUl5UVQ==}
+    dev: false

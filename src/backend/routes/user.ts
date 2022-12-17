@@ -1,32 +1,34 @@
-import express, { RequestHandler, Router } from "express";
-import { Prisma, PrismaClient } from "@prisma/client";
+import { initTRPC } from "@trpc/server";
+import { z } from "zod";
+import { PrismaClient } from "@prisma/client";
 
-const router: Router = express.Router();
 const prisma = new PrismaClient();
+export const t = initTRPC.create();
 
-router.get("/", (async (_, res) => {
-    const users = await prisma.user.findMany();
-    res.status(200).send(users);
-}) as RequestHandler);
+export const userRouter = t.router({
+    getUsers: t.procedure.query(async (_) => {
+        return await prisma.user.findMany();
+    }),
 
-router.post("/", (async (req, res) => {
-    const user: Prisma.UserCreateInput = req.body as Prisma.UserCreateInput;
-
-    if (!user) {
-        res.status(400).send("Invalid User Data Provided");
-        return;
-    }
-
-    const result = await prisma.user
-        .create({
-            data: user,
-        })
-        .catch((e) => {
-            console.error(e);
-            res.status(500).send(e.message);
-            return;
+    getUser: t.procedure.input(z.number()).query(async (req) => {
+        return await prisma.user.findUnique({
+            where: {
+                id: req.input,
+            },
         });
-    res.status(201).send(result);
-}) as RequestHandler);
+    }),
 
-export default router;
+    createUser: t.procedure
+        .input(
+            z.object({
+                discordId: z.string().min(5),
+                gbfId: z.string().min(5),
+            })
+        )
+        .mutation(async (req) => {
+            return await prisma.user.create({
+                data: req.input,
+            });
+        }),
+});
+export type UserRouter = typeof userRouter;

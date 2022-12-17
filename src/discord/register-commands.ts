@@ -1,7 +1,7 @@
 import { REST, Routes } from "discord.js";
 import { slashCommands } from "./commands";
 import * as dotenv from "dotenv";
-dotenv.config({ path: __dirname + "/../.env" });
+dotenv.config({ path: __dirname + "/../../.env" });
 
 void (async () => {
     if (process.env.DISCORD_TOKEN === undefined) throw new Error("DISCORD_TOKEN is undefined");
