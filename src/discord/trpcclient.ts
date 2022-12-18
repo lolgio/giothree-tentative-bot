@@ -1,7 +1,10 @@
 import { createTRPCProxyClient, httpBatchLink } from "@trpc/client";
 import type { AppRouter } from "../backend";
+import { inferRouterOutputs } from "@trpc/server";
 
-export const TRPCClient = createTRPCProxyClient<AppRouter>({
+export type RouterOutput = inferRouterOutputs<AppRouter>;
+
+export const t = createTRPCProxyClient<AppRouter>({
     links: [
         httpBatchLink({
             url: "http://localhost:7373/trpc",
@@ -9,4 +12,4 @@ export const TRPCClient = createTRPCProxyClient<AppRouter>({
     ],
 });
 
-export type ClientType = typeof TRPCClient;
+export type ClientType = typeof t;

@@ -1,5 +1,5 @@
 import express from "express";
-import { inferAsyncReturnType, initTRPC } from "@trpc/server";
+import { TRPCError, inferAsyncReturnType, initTRPC } from "@trpc/server";
 import { userRouter } from "./routes/user";
 import * as trpcExpress from "@trpc/server/adapters/express";
 
@@ -14,11 +14,7 @@ const createContext = ({ req, res }: trpcExpress.CreateExpressContextOptions) =>
 };
 type Context = inferAsyncReturnType<typeof createContext>;
 
-const t = initTRPC.context<Context>().create({
-    errorFormatter: (err) => {
-        console.error(err);
-    },
-});
+const t = initTRPC.context<Context>().create({});
 const appRouter = t.router({
     user: userRouter,
 });
@@ -36,6 +32,13 @@ app.use(
     trpcExpress.createExpressMiddleware({
         router: appRouter,
         createContext,
+        onError: ({ error: err }) => {
+            if (err instanceof TRPCError) {
+                console.log(`TRPC Error: ${err.code} - ${err.message}`);
+            } else {
+                console.log("Unknown Error");
+            }
+        },
     })
 );
 

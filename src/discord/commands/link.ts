@@ -1,6 +1,7 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 import { SlashCommand } from "../types";
-import { TRPCClient } from "../trpcclient";
+import { t } from "../trpcclient";
+import { TRPCClientError } from "@trpc/client";
 
 export const command: SlashCommand = {
     data: new SlashCommandBuilder()
@@ -11,15 +12,17 @@ export const command: SlashCommand = {
         ),
 
     async execute(interaction: ChatInputCommandInteraction) {
-        const response = await TRPCClient.user.createUser.mutate({
-            discordId: interaction.user.id,
-            gbfId: interaction.options.getString("gbf_id") ?? "",
-        });
+        try {
+            await t.user.createUser.mutate({
+                discordId: interaction.user.id,
+                gbfId: interaction.options.getString("gbf_id") ?? "",
+            });
 
-        if (response) {
-            await interaction.reply("Linked your account!");
-        } else {
-            await interaction.reply("Failed to link your account!");
+            await interaction.reply("Successfully linked your account!");
+        } catch (err) {
+            if (err instanceof TRPCClientError) {
+                await interaction.reply(err.message);
+            }
         }
     },
 };
