@@ -8,8 +8,16 @@ datasource db {
 }
 
 model User {
-    id        Int      @id @default(autoincrement())
-    discordId String   @unique
-    gbfId     String   @unique
-    createdAt DateTime @default(now())
+    id             Int             @id @default(autoincrement())
+    discordId      String          @unique
+    createdAt      DateTime        @default(now())
+    UserGbfAccount UserGbfAccount?
+}
+
+model UserGbfAccount {
+    user_id       Int    @id @unique
+    level         Int
+    nickname      String
+    discordUser   User   @relation(fields: [discordUserId], references: [id])
+    discordUserId Int    @unique
 }

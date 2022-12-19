@@ -13,12 +13,12 @@ export const command: SlashCommand = {
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {
+            await interaction.deferReply({ ephemeral: true });
             await t.user.createUser.mutate({
                 discordId: interaction.user.id,
                 gbfId: interaction.options.getString("gbf_id") ?? "",
             });
-
-            await interaction.reply("Successfully linked your account!");
+            await interaction.editReply("Successfully linked your account!");
         } catch (err) {
             if (err instanceof TRPCClientError) {
                 await interaction.reply(err.message);

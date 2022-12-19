@@ -2,6 +2,7 @@ import express from "express";
 import { TRPCError, inferAsyncReturnType, initTRPC } from "@trpc/server";
 import { userRouter } from "./routes/user";
 import * as trpcExpress from "@trpc/server/adapters/express";
+import { getGameVersion, initializeAxiosGbf } from "./services/gbf";
 
 const app = express();
 const port = process.env.BACKEND_PORT;
@@ -42,6 +43,19 @@ app.use(
     })
 );
 
-app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-});
+void (async () => {
+    await initializeAxiosGbf();
+
+    app.listen(port, () => {
+        console.log(`Server running on port ${port}`);
+    });
+
+    const gbfVersion = await getGameVersion().catch((err: unknown) => {
+        console.log("Unable to Retrieve GBF Version, Check for Maintenance or Invalid Cookies");
+        if (err instanceof Error) {
+            console.log(err.message);
+        }
+    });
+
+    console.log(`GBF Version: ${gbfVersion}`);
+})();

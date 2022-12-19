@@ -2,6 +2,7 @@ import { TRPCError, initTRPC } from "@trpc/server";
 import { z } from "zod";
 import { PrismaClient } from "@prisma/client";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime";
+import { getPlayerData } from "../services/gbf";
 
 const prisma = new PrismaClient();
 export const t = initTRPC.create();
@@ -46,15 +47,38 @@ export const userRouter = t.router({
         )
         .mutation(async (req) => {
             try {
+                const gbfAccount = await getPlayerData(req.input.gbfId);
+                if (!gbfAccount) {
+                    throw new TRPCError({
+                        code: "NOT_FOUND",
+                        message: `No GBF account found with id ${req.input.gbfId}!}`,
+                    });
+                }
                 const newUser = await prisma.user.create({
-                    data: req.input,
+                    data: {
+                        discordId: req.input.discordId,
+                    },
                 });
-                return newUser;
+
+                const gbfDbAccount = await prisma.userGbfAccount.create({
+                    data: {
+                        user_id: gbfAccount.user_id,
+                        level: Number(gbfAccount.level),
+                        nickname: gbfAccount.nickname,
+                        discordUserId: newUser.id,
+                    },
+                });
+                return gbfDbAccount;
             } catch (err) {
                 if (err instanceof PrismaClientKnownRequestError) {
                     throw new TRPCError({
                         code: "BAD_REQUEST",
                         message: "User already exists!",
+                    });
+                } else {
+                    throw new TRPCError({
+                        code: "INTERNAL_SERVER_ERROR",
+                        message: "Something went wrong!",
                     });
                 }
             }
