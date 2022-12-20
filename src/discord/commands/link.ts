@@ -2,6 +2,7 @@ import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 import { SlashCommand } from "../types";
 import { t } from "../trpcclient";
 import { TRPCClientError } from "@trpc/client";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime";
 
 export const command: SlashCommand = {
     data: new SlashCommandBuilder()
@@ -21,7 +22,20 @@ export const command: SlashCommand = {
             await interaction.editReply("Successfully linked your account!");
         } catch (err) {
             if (err instanceof TRPCClientError) {
-                await interaction.reply(err.message);
+                if (err.cause instanceof PrismaClientKnownRequestError && err.meta) {
+                    const target: string[] = err.meta.target as string[];
+                    if (target.includes("discordId")) {
+                        await interaction.editReply(
+                            "Your Discord account already has a GBF Account Linked!\nUse /unlink first."
+                        );
+                    } else {
+                        await interaction.editReply(
+                            "The GBF ID is already linked to another Discord account!"
+                        );
+                    }
+                    return;
+                }
+                await interaction.editReply(err.message);
             }
         }
     },

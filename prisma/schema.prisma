@@ -3,21 +3,73 @@ generator client {
 }
 
 datasource db {
-    provider = "mysql"
+    provider = "postgresql"
     url      = env("DATABASE_URL")
 }
 
 model User {
-    id             Int             @id @default(autoincrement())
-    discordId      String          @unique
-    createdAt      DateTime        @default(now())
-    UserGbfAccount UserGbfAccount?
+    discordId  Int        @id @unique
+    createdAt  DateTime   @default(now())
+    gbfAccount GbfPlayer?
 }
 
-model UserGbfAccount {
-    user_id       Int    @id @unique
-    level         Int
-    nickname      String
-    discordUser   User   @relation(fields: [discordUserId], references: [id])
-    discordUserId Int    @unique
+model GbfCrew {
+    id            Int                  @id @unique
+    name          String               @unique
+    leaderId      Int
+    introduction  String?
+    crewMembers   GbfPlayer[]
+    gbfCrewGWData GbfCrewGWData[]
+    trackedData   GbfTrackedCrewData[]
+}
+
+model GbfPlayer {
+    id              Int               @id @unique
+    level           Int
+    nickname        String
+    crew            GbfCrew?          @relation(fields: [crewId], references: [id])
+    crewId          Int?
+    crewPosition    Int?
+    gbfPlayerGWData GbfPlayerGWData[]
+    playerDiscord   User?             @relation(fields: [playerDiscordId], references: [discordId])
+    playerDiscordId Int?              @unique
+}
+
+model GbfCrewGWData {
+    crew          GbfCrew @relation(fields: [crewId], references: [id])
+    crewId        Int
+    gwNumber      Int
+    ranking       Int?
+    preliminaries Int?
+    day1          Int?
+    day2          Int?
+    day3          Int?
+    day4          Int?
+
+    @@id([crewId, gwNumber])
+}
+
+model GbfTrackedCrewData {
+    crew        GbfCrew  @relation(fields: [crewId], references: [id])
+    createdAt   DateTime @default(now())
+    crewId      Int
+    gwNumber    Int
+    totalHonors Int
+
+    @@id([crewId, gwNumber, createdAt])
+}
+
+model GbfPlayerGWData {
+    player        GbfPlayer @relation(fields: [playerId], references: [id])
+    playerId      Int
+    gwNumber      Int
+    ranking       Int?
+    preliminaries Int?
+    interlude     Int?
+    day1          Int?
+    day2          Int?
+    day3          Int?
+    day4          Int?
+
+    @@id([playerId, gwNumber])
 }

@@ -23,7 +23,7 @@ export const userRouter = t.router({
     getUser: t.procedure.input(z.number()).query(async (req) => {
         const user = await prisma.user.findUnique({
             where: {
-                id: req.input,
+                discordId: req.input,
             },
         });
 
@@ -40,7 +40,7 @@ export const userRouter = t.router({
         .input(
             //prettier-ignore
             z.object({
-                    discordId: z.string().min(5),
+                    discordId: z.string(),
                     gbfId: z.string().min(5),
                 })
                 .required()
@@ -56,24 +56,25 @@ export const userRouter = t.router({
                 }
                 const newUser = await prisma.user.create({
                     data: {
-                        discordId: req.input.discordId,
+                        discordId: Number(req.input.discordId),
                     },
                 });
 
-                const gbfDbAccount = await prisma.userGbfAccount.create({
+                const gbfDbAccount = await prisma.gbfPlayer.create({
                     data: {
-                        user_id: gbfAccount.user_id,
+                        id: gbfAccount.user_id,
                         level: Number(gbfAccount.level),
                         nickname: gbfAccount.nickname,
-                        discordUserId: newUser.id,
+                        playerDiscordId: newUser.discordId,
                     },
                 });
                 return gbfDbAccount;
             } catch (err) {
                 if (err instanceof PrismaClientKnownRequestError) {
                     throw new TRPCError({
-                        code: "BAD_REQUEST",
-                        message: "User already exists!",
+                        code: "CONFLICT",
+                        message: "User already exists",
+                        cause: err,
                     });
                 } else {
                     throw new TRPCError({

@@ -1,9 +1,12 @@
-import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 import { CookieJar } from "tough-cookie";
 import { wrapper } from "axios-cookiejar-support";
-import { z } from "zod";
+import { ZodError, z } from "zod";
 import * as dotenv from "dotenv";
+import { PrismaClient } from "@prisma/client";
 dotenv.config({ path: __dirname + "/../../../.env" });
+
+const prisma = new PrismaClient();
 
 const initCookieJar = async () => {
     const cookieJar = new CookieJar();
@@ -56,27 +59,125 @@ export const getGameVersion = async () => {
 export const getPlayerData = async (playerId: string) => {
     const userSearchSchema = z.object({
         user_id: z.number().min(1),
-        job_id: z.string(),
         level: z.string(),
         nickname: z.string(),
     });
 
-    const response = await gbf
+    const response = (await gbf
         .post("/friend/search_friends_id", {
             user_id: playerId,
         })
         .catch((err) => {
             console.log(err);
-        });
+        })) as AxiosResponse;
 
     if (!response) {
         return null;
     }
-    if (typeof response.data === "object") {
+    try {
+        return userSearchSchema.parse(response.data);
+    } catch (err) {
+        return null;
+    }
+};
+
+export const updateCrewData = async (crewId: number) => {
+    const crewSearchSchema = z.object({
+        guild_id: z
+            .string()
+            .min(1)
+            .transform((val) => parseInt(val)),
+        guild_name: z.string(),
+        introduction: z.string(),
+        leader_name: z.string(),
+        leader_user_id: z
+            .string()
+            .min(1)
+            .transform((val) => parseInt(val)),
+    });
+
+    const response = (await gbf.get(`/guild_other/guild_info/${crewId}`).catch((err) => {
+        console.log(err);
+        return;
+    })) as AxiosResponse;
+
+    try {
+        const crew = crewSearchSchema.parse(response.data);
+
+        await prisma.gbfCrew.upsert({
+            where: { id: crew.guild_id },
+            update: {
+                name: crew.guild_name,
+                introduction: crew.introduction,
+                leaderId: crew.leader_user_id,
+            },
+            create: {
+                id: crew.guild_id,
+                name: crew.guild_name,
+                introduction: crew.introduction,
+                leaderId: crew.leader_user_id,
+            },
+        });
+        await updateCrewMembers(crewId);
+    } catch (err) {
+        console.log(err);
+        return;
+    }
+};
+
+export const updateCrewMembers = async (crewId: number) => {
+    const crewMembersSchema = z.object({
+        list: z.array(
+            z.object({
+                id: z
+                    .string()
+                    .min(1)
+                    .transform((val) => parseInt(val)),
+                name: z.string(),
+                level: z.string().transform((val) => parseInt(val)),
+                is_leader: z.boolean(),
+                member_position: z.string().transform((val) => parseInt(val)),
+            })
+        ),
+    });
+
+    for (let page = 1; page <= 3; page++) {
+        const response = (await gbf
+            .get(`/guild_other/member_list/${page}/${crewId}`)
+            .catch((err) => {
+                console.log(err);
+                return;
+            })) as AxiosResponse;
+
         try {
-            return userSearchSchema.parse(response.data);
+            const memberPage = crewMembersSchema.parse(response.data);
+
+            const query = memberPage.list.map((member) =>
+                prisma.gbfPlayer.upsert({
+                    where: { id: member.id },
+                    update: {
+                        nickname: member.name,
+                        level: member.level,
+                        crewPosition: member.member_position,
+                        crewId: crewId,
+                    },
+                    create: {
+                        id: member.id,
+                        nickname: member.name,
+                        level: member.level,
+                        crewPosition: member.member_position,
+                        crewId: crewId,
+                    },
+                })
+            );
+            await prisma.$transaction(query);
         } catch (err) {
-            return null;
+            if (err instanceof ZodError) {
+                console.log(`Crew ${crewId} is private`);
+                return;
+            }
+            console.log(err);
+            return;
         }
     }
 };
