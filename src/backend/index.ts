@@ -3,6 +3,7 @@ import { TRPCError, inferAsyncReturnType, initTRPC } from "@trpc/server";
 import { userRouter } from "./routes/user";
 import * as trpcExpress from "@trpc/server/adapters/express";
 import { initializeAxiosGbf } from "./services/gbf";
+import { updateEventData } from "./services/wiki";
 
 const app = express();
 const port = process.env.BACKEND_PORT;
@@ -49,4 +50,6 @@ void (async () => {
     app.listen(port, () => {
         console.log(`Server running on port ${port}`);
     });
+
+    await updateEventData();
 })();
