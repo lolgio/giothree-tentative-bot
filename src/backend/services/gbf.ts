@@ -1,4 +1,9 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
+import axios, {
+    AxiosInstance,
+    AxiosRequestConfig,
+    AxiosResponse,
+    AxiosResponseHeaders,
+} from "axios";
 import { CookieJar } from "tough-cookie";
 import { wrapper } from "axios-cookiejar-support";
 import { ZodError, z } from "zod";
@@ -8,26 +13,34 @@ dotenv.config({ path: __dirname + "/../../../.env" });
 
 const prisma = new PrismaClient();
 
-const initCookieJar = async () => {
-    const cookieJar = new CookieJar();
-    await cookieJar.setCookie(
-        `midship=${process.env.GBF_MIDSHIP}`,
-        "https://game.granbluefantasy.jp"
-    );
+interface GbfInstance extends AxiosInstance {
+    uid?: number;
+}
 
-    return cookieJar;
-};
-
-let gbf: AxiosInstance;
+let gbf: GbfInstance;
+let config: AxiosRequestConfig;
 export const initializeAxiosGbf = async () => {
-    const cookieJar = await initCookieJar();
+    const account = await prisma.dataAccount.findFirst();
+    if (!account) {
+        console.log("No Accounts Found in Database");
+        return;
+    }
 
-    const config: AxiosRequestConfig = {
+    const gbfVersion = (await getGameVersion().catch((_) => {
+        console.log("Unable to Retrieve GBF Version, Check for Maintenance or Invalid Cookies");
+        return;
+    })) as string;
+
+    const cookieJar = new CookieJar();
+    await cookieJar.setCookie(account.midship, "https://game.granbluefantasy.jp");
+    await cookieJar.setCookie(account.wing, "https://game.granbluefantasy.jp");
+
+    config = {
         baseURL: "https://game.granbluefantasy.jp",
         headers: {
             "Accept-Encoding": "gzip, deflate, br",
             Connection: "keep-alive",
-            "X-Version": "1671026148",
+            "X-Version": gbfVersion,
             "User-Agent":
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
             Accept: "application/json, text/javascript, */*; q=0.01",
@@ -37,6 +50,7 @@ export const initializeAxiosGbf = async () => {
     };
 
     gbf = wrapper(axios.create(config));
+    gbf.uid = Number(account.uid);
 };
 
 export const getGameVersion = async () => {
@@ -54,6 +68,32 @@ export const getGameVersion = async () => {
             return version[1];
         }
     }
+};
+
+const refreshCookies = async (headers: AxiosResponseHeaders) => {
+    if (!headers["set-cookie"]) {
+        return;
+    }
+    const promises = headers["set-cookie"].map(async (cookie: string) => {
+        await config.jar?.setCookie(cookie, "https://game.granbluefantasy.jp");
+        if (cookie.includes("midship")) {
+            await prisma.dataAccount.update({
+                where: { uid: String(gbf.uid) },
+                data: {
+                    midship: cookie,
+                },
+            });
+        } else if (cookie.includes("wing")) {
+            await prisma.dataAccount.update({
+                where: { uid: String(gbf.uid) },
+                data: {
+                    wing: cookie,
+                },
+            });
+        }
+    });
+
+    await Promise.all(promises);
 };
 
 export const getPlayerData = async (playerId: string) => {
@@ -75,6 +115,7 @@ export const getPlayerData = async (playerId: string) => {
         return null;
     }
     try {
+        await refreshCookies(response.headers as AxiosResponseHeaders);
         return userSearchSchema.parse(response.data);
     } catch (err) {
         return null;
@@ -96,10 +137,14 @@ export const updateCrewData = async (crewId: number) => {
             .transform((val) => parseInt(val)),
     });
 
-    const response = (await gbf.get(`/guild_other/guild_info/${crewId}`).catch((err) => {
-        console.log(err);
-        return;
-    })) as AxiosResponse;
+    const response = (await gbf
+        .get(
+            `/guild_other/guild_info/${crewId}?_=${Date.now()}&t=${Date.now() + 100}&uid=${gbf.uid}`
+        )
+        .catch((err) => {
+            console.log(err);
+            return;
+        })) as AxiosResponse;
 
     try {
         const crew = crewSearchSchema.parse(response.data);
@@ -119,6 +164,7 @@ export const updateCrewData = async (crewId: number) => {
             },
         });
         await updateCrewMembers(crewId);
+        await refreshCookies(response.headers as AxiosResponseHeaders);
     } catch (err) {
         console.log(err);
         return;
@@ -143,7 +189,11 @@ export const updateCrewMembers = async (crewId: number) => {
 
     for (let page = 1; page <= 3; page++) {
         const response = (await gbf
-            .get(`/guild_other/member_list/${page}/${crewId}`)
+            .get(
+                `/guild_other/member_list/${page}/${crewId}?_=${Date.now()}&t=${
+                    Date.now() + 100
+                }&uid=${gbf.uid}`
+            )
             .catch((err) => {
                 console.log(err);
                 return;

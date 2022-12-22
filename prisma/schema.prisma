@@ -73,3 +73,9 @@ model GbfPlayerGWData {
 
     @@id([playerId, gwNumber])
 }
+
+model DataAccount {
+    uid     String @id @unique
+    midship String
+    wing    String
+}
