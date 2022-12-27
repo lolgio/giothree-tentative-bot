@@ -80,6 +80,7 @@ model GbfEvent {
     startDate DateTime
     endDate   DateTime
     imgUrl    String
+    wikiUrl   String
 }
 
 model DataAccount {

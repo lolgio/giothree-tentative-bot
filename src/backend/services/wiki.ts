@@ -22,6 +22,7 @@ const parseEventData = (dataList: HTMLElement[], tooltipList: HTMLElement[]) => 
         start: z.number().transform((val) => new Date(val * 1000)),
         end: z.number().transform((val) => new Date(val * 1000)),
         imgUrl: z.string().url(),
+        wikiUrl: z.string().url(),
     });
     type Event = z.infer<typeof eventSchema>;
 
@@ -36,6 +37,7 @@ const parseEventData = (dataList: HTMLElement[], tooltipList: HTMLElement[]) => 
             const start = Number(tooltip.getAttribute("data-start"));
             const end = Number(tooltip.getAttribute("data-end"));
             const id = "" + title + start;
+            const wikiUrl = "https://gbf.wiki" + data.parentNode.getAttribute("href");
 
             const event = eventSchema.parse({
                 id,
@@ -43,6 +45,7 @@ const parseEventData = (dataList: HTMLElement[], tooltipList: HTMLElement[]) => 
                 start,
                 end,
                 imgUrl,
+                wikiUrl,
             });
             events.push(event);
         }
@@ -90,6 +93,7 @@ export const updateEventData = async () => {
                 startDate: event.start,
                 endDate: event.end,
                 imgUrl: event.imgUrl,
+                wikiUrl: event.wikiUrl,
             },
             create: {
                 id: event.id,
@@ -97,6 +101,7 @@ export const updateEventData = async () => {
                 startDate: event.start,
                 endDate: event.end,
                 imgUrl: event.imgUrl,
+                wikiUrl: event.wikiUrl,
             },
         })
     );

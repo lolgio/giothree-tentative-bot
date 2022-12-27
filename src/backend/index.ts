@@ -2,7 +2,7 @@ import express from "express";
 import { TRPCError, inferAsyncReturnType, initTRPC } from "@trpc/server";
 import { userRouter } from "./routes/user";
 import * as trpcExpress from "@trpc/server/adapters/express";
-import { initializeAxiosGbf } from "./services/gbf";
+import { initializeAxiosGbf, updateCrewData } from "./services/gbf";
 import { updateEventData } from "./services/wiki";
 
 const app = express();
@@ -52,4 +52,5 @@ void (async () => {
     });
 
     await updateEventData();
+    await updateCrewData(1470346);
 })();
