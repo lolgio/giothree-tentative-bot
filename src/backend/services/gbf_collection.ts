@@ -31,6 +31,8 @@ export const initializeAxiosGbf = async () => {
         return;
     })) as string;
 
+    console.log("GBF Version: " + gbfVersion);
+
     const cookieJar = new CookieJar();
     await cookieJar.setCookie(account.midship, "https://game.granbluefantasy.jp");
     await cookieJar.setCookie(account.wing, "https://game.granbluefantasy.jp");
@@ -42,7 +44,7 @@ export const initializeAxiosGbf = async () => {
             Connection: "keep-alive",
             "X-Version": gbfVersion,
             "User-Agent":
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
             Accept: "application/json, text/javascript, */*; q=0.01",
             "X-Requested-With": "XMLHttpRequest",
         },

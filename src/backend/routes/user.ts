@@ -2,7 +2,7 @@ import { TRPCError, initTRPC } from "@trpc/server";
 import { z } from "zod";
 import { PrismaClient } from "@prisma/client";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime";
-import { getPlayerData } from "../services/gbf";
+import { getPlayerData } from "../services/gbf_collection";
 
 const prisma = new PrismaClient();
 export const t = initTRPC.create();

@@ -5,11 +5,11 @@
     "main": "index.js",
     "scripts": {
         "start": "node dist/index.js",
-        "server-dev": "ts-node-dev src/backend/index.ts",
+        "server-dev": "ts-node-dev --exit-child src/backend/index.ts",
         "discord-dev": "ts-node-dev src/discord/index.ts",
         "register-commands": "ts-node src/discord/register-commands.ts",
         "build": "tsc",
-        "local-db": "flyctl proxy 5432 -a giothree-bot"
+        "local-db": "fly proxy 5432 -a giothree-bot"
     },
     "keywords": [],
     "author": "",

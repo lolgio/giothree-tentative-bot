@@ -4,3 +4,4 @@ prisma/migrations
 *.rest
 .env
 .npmrc
+todo.txt

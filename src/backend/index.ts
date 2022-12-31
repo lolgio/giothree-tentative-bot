@@ -2,8 +2,9 @@ import express from "express";
 import { TRPCError, inferAsyncReturnType, initTRPC } from "@trpc/server";
 import { userRouter } from "./routes/user";
 import * as trpcExpress from "@trpc/server/adapters/express";
-import { initializeAxiosGbf, updateCrewData } from "./services/gbf";
-import { updateEventData } from "./services/wiki";
+import { initializeAxiosGbf } from "./services/gbf_collection";
+import { updateEventData } from "./services/wiki_collection";
+import { gbfRouter } from "./routes/gbf";
 
 const app = express();
 const port = process.env.BACKEND_PORT;
@@ -19,6 +20,7 @@ type Context = inferAsyncReturnType<typeof createContext>;
 const t = initTRPC.context<Context>().create({});
 const appRouter = t.router({
     user: userRouter,
+    gbf: gbfRouter,
 });
 
 export type AppRouter = typeof appRouter;
@@ -52,5 +54,4 @@ void (async () => {
     });
 
     await updateEventData();
-    await updateCrewData(1470346);
 })();
