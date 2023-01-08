@@ -23,6 +23,8 @@
         "@types/tough-cookie": "^4.0.2",
         "axios": "^1.2.1",
         "axios-cookiejar-support": "^4.0.3",
+        "chart.js": "^3.9.1",
+        "chartjs-node-canvas": "^4.1.6",
         "cors": "^2.8.5",
         "discord.js": "^14.7.1",
         "dotenv": "^16.0.3",

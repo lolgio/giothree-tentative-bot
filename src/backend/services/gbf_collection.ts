@@ -43,8 +43,7 @@ export const initializeAxiosGbf = async () => {
             "Accept-Encoding": "gzip, deflate, br",
             Connection: "keep-alive",
             "X-Version": gbfVersion,
-            "User-Agent":
-                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
+            "User-Agent": account.ua,
             Accept: "application/json, text/javascript, */*; q=0.01",
             "X-Requested-With": "XMLHttpRequest",
         },

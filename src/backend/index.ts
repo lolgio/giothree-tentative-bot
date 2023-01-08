@@ -2,9 +2,9 @@ import express from "express";
 import { TRPCError, inferAsyncReturnType, initTRPC } from "@trpc/server";
 import { userRouter } from "./routes/user";
 import * as trpcExpress from "@trpc/server/adapters/express";
-import { initializeAxiosGbf } from "./services/gbf_collection";
 import { updateEventData } from "./services/wiki_collection";
 import { gbfRouter } from "./routes/gbf";
+import { initializeAxiosGbf } from "./services/gbf_collection";
 
 const app = express();
 const port = process.env.BACKEND_PORT;

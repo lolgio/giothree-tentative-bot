@@ -59,30 +59,24 @@ export const updateEventData = async () => {
         return;
     }
 
-    const eventTable = dom
-        .querySelector(".wikitable")
-        ?.getElementsByTagName("tbody")[0]
-        .getElementsByTagName("tr")[9]
-        .getElementsByTagName("td")[0];
+    const eventTable = dom.querySelector(".wikitable:first-of-type > tbody > tr:nth-child(8) > td");
 
-    const dataList = eventTable
-        ?.querySelectorAll(":scope > a")
-        .map((a) => a.getElementsByTagName("img")[0]);
+    const dataList = eventTable?.querySelectorAll(":scope > a > img");
     if (eventTable?.querySelector(".gallery-swap-images")) {
-        const galleryEvents = eventTable
-            .querySelectorAll(".gallery-swap-images")
-            .map((a) => a.getElementsByTagName("a")[0]);
+        const galleryEvents = eventTable.querySelectorAll(".gallery-swap-images > a:first-of-type");
         galleryEvents.forEach((event) => {
             dataList?.push(event.getElementsByTagName("img")[0]);
         });
     }
-    const tooltipList = eventTable
-        ?.querySelectorAll(".tooltip")
-        .map((a) => a.getElementsByTagName("span")[0]);
+    let tooltipList = eventTable?.querySelectorAll(".tooltip > span:first-of-type");
     if (!dataList || !tooltipList) {
         console.log("No Events Found");
         return;
     }
+    if (tooltipList.length > dataList.length) {
+        tooltipList = tooltipList.slice(tooltipList.length - dataList.length);
+    }
+
     const events = parseEventData(dataList, tooltipList);
 
     const query = events.map((event) =>

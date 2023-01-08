@@ -3,6 +3,7 @@ import { SlashCommand } from "../types";
 import { t } from "../trpcclient";
 import { TRPCClientError } from "@trpc/client";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime";
+import { generateEmbed } from "../utils/generateTrackEmbed";
 
 export const command: SlashCommand = {
     data: new SlashCommandBuilder()
@@ -46,6 +47,23 @@ export const command: SlashCommand = {
                                 .setDescription("The Granblue ID of the crew.")
                                 .setRequired(true)
                         )
+                )
+        )
+        .addSubcommand((subcommand) =>
+            subcommand
+                .setName("gwchart")
+                .setDescription("Get a chart of your guild war honors.")
+                .addNumberOption((option) =>
+                    option
+                        .setName("crew_id")
+                        .setDescription("The Granblue ID of the crew.")
+                        .setRequired(true)
+                )
+                .addNumberOption((option) =>
+                    option
+                        .setName("gw_number")
+                        .setDescription("The Guild War Number.")
+                        .setRequired(true)
                 )
         ) as SlashCommandBuilder,
 
@@ -164,6 +182,21 @@ export const command: SlashCommand = {
                     if (err instanceof TRPCClientError) {
                         await interaction.editReply("No crew found!");
                     }
+                }
+            }
+        }
+        if (interaction.options.getSubcommand() === "gwchart") {
+            try {
+                await interaction.deferReply({ ephemeral: true });
+                const reply = await generateEmbed(
+                    interaction.options.getNumber("crew_id") ?? 0,
+                    interaction.options.getNumber("gw_number") ?? 0
+                );
+
+                await interaction.editReply(reply);
+            } catch (err) {
+                if (err instanceof TRPCClientError) {
+                    await interaction.editReply("No chart found!");
                 }
             }
         }

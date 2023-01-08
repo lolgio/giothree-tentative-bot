@@ -87,4 +87,5 @@ model DataAccount {
     uid     String @id @unique
     midship String
     wing    String
+    ua      String
 }

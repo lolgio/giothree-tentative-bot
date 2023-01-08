@@ -53,4 +53,19 @@ export const gbfRouter = t.router({
         }
         return events;
     }),
+    getTrackedGWData: t.procedure.input(z.number()).query(async (req) => {
+        const data = await prisma.gbfTrackedCrewData.findMany({
+            where: {
+                crewId: req.input,
+            },
+        });
+
+        if (!data) {
+            throw new TRPCError({
+                code: "NOT_FOUND",
+                message: "No data found!",
+            });
+        }
+        return data;
+    }),
 });
