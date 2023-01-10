@@ -4,7 +4,8 @@ import { userRouter } from "./routes/user";
 import * as trpcExpress from "@trpc/server/adapters/express";
 import { updateEventData } from "./services/wiki_collection";
 import { gbfRouter } from "./routes/gbf";
-import { initializeAxiosGbf } from "./services/gbf_collection";
+import { getGWDay, initializeAxiosGbf, updateGWData } from "./services/gbf_collection";
+import { initScrapeScheduler } from "./services/scheduler";
 
 const app = express();
 const port = process.env.BACKEND_PORT;
@@ -53,5 +54,11 @@ void (async () => {
         console.log(`Server running on port ${port}`);
     });
 
+    initScrapeScheduler();
     await updateEventData();
+
+    const gw = await getGWDay();
+    if (gw) {
+        await updateGWData(1, gw);
+    }
 })();

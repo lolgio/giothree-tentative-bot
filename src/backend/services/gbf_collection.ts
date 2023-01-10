@@ -9,6 +9,7 @@ import { wrapper } from "axios-cookiejar-support";
 import { ZodError, z } from "zod";
 import * as dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
+import { GuildWar, GuildWarDay } from "../../discord/types";
 dotenv.config({ path: __dirname + "/../../../.env" });
 
 const prisma = new PrismaClient();
@@ -52,6 +53,38 @@ export const initializeAxiosGbf = async () => {
 
     gbf = wrapper(axios.create(config));
     gbf.uid = Number(account.uid);
+};
+
+export const getGWDay = async (): Promise<GuildWar | null> => {
+    const now = new Date();
+    const gw = await prisma.guildWar.findFirst({
+        where: {
+            prelimStart: {
+                lte: now,
+            },
+            end: {
+                gte: now,
+            },
+        },
+    });
+
+    if (!gw) {
+        return null;
+    }
+
+    if (now < gw.finalsStart) {
+        return {
+            number: gw.number,
+            day: 0,
+        };
+    } else {
+        const day =
+            Math.floor((now.getTime() - gw.finalsStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        return {
+            number: gw.number,
+            day: day as GuildWarDay,
+        };
+    }
 };
 
 export const getGameVersion = async () => {
@@ -230,5 +263,78 @@ export const updateCrewMembers = async (crewId: number) => {
             console.log(err);
             return;
         }
+    }
+};
+
+export const updateGWData = async (page: number, gw: GuildWar) => {
+    const gwRankingSchema = z.object({
+        count: z.string(),
+        last: z.number().min(1),
+        next: z.number().min(1),
+        prev: z.number().min(1),
+        list: z.array(
+            z.object({
+                id: z
+                    .string()
+                    .min(1)
+                    .transform((val) => parseInt(val)),
+                name: z.string(),
+                point: z.string().transform((val) => parseInt(val)),
+                ranking: z.string().transform((val) => parseInt(val)),
+            })
+        ),
+    });
+
+    const response = (await gbf
+        .get(
+            `/teamraid0${gw.number}/rest/ranking/${
+                gw.day === 0 ? "guild" : "totalguild"
+            }/detail/${page}/0?_=${Date.now()}&t=${Date.now() + 100}&uid=${gbf.uid}`
+        )
+        .catch((err) => {
+            console.log(err);
+            return;
+        })) as AxiosResponse;
+
+    try {
+        const pageData = gwRankingSchema.parse(response.data);
+
+        await prisma.gbfCrew.createMany({
+            data: pageData.list.map((crew) => ({
+                id: crew.id,
+                name: crew.name,
+            })),
+            skipDuplicates: true,
+        });
+
+        const query = pageData.list.map((crew) =>
+            prisma.gbfCrewGWData.upsert({
+                where: {
+                    id: {
+                        crewId: crew.id,
+                        gwNumber: gw.number,
+                    },
+                },
+                update: {
+                    preliminaries: crew.point,
+                    ranking: crew.ranking,
+                },
+                create: {
+                    crewId: crew.id,
+                    gwNumber: gw.number,
+                    preliminaries: crew.point,
+                    ranking: crew.ranking,
+                },
+            })
+        );
+        await prisma.$transaction(query);
+        console.log(`Updated Page: ${page}`);
+
+        if (pageData.next !== page && pageData.next <= 800) {
+            await updateGWData(pageData.next, gw);
+        }
+    } catch (err) {
+        console.log(err);
+        return;
     }
 };

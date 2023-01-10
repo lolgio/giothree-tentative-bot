@@ -15,8 +15,8 @@ model User {
 
 model GbfCrew {
     id            Int                  @id @unique
-    name          String               @unique
-    leaderId      Int
+    name          String
+    leaderId      Int?
     introduction  String?
     crewMembers   GbfPlayer[]
     gbfCrewGWData GbfCrewGWData[]
@@ -35,28 +35,40 @@ model GbfPlayer {
     playerDiscordId Int?              @unique
 }
 
+model GuildWar {
+    number          Int                  @id @unique
+    element         String
+    prelimStart     DateTime
+    finalsStart     DateTime
+    end             DateTime
+    crewData        GbfCrewGWData[]
+    trackedCrewData GbfTrackedCrewData[]
+}
+
 model GbfCrewGWData {
-    crew          GbfCrew @relation(fields: [crewId], references: [id])
+    crew          GbfCrew  @relation(fields: [crewId], references: [id])
     crewId        Int
+    gw            GuildWar @relation(fields: [gwNumber], references: [number])
     gwNumber      Int
     ranking       Int?
-    preliminaries Int?
-    day1          Int?
-    day2          Int?
-    day3          Int?
-    day4          Int?
+    preliminaries BigInt?
+    day1          BigInt?
+    day2          BigInt?
+    day3          BigInt?
+    day4          BigInt?
 
-    @@id([crewId, gwNumber])
+    @@id([crewId, gwNumber], name: "id")
 }
 
 model GbfTrackedCrewData {
     crew        GbfCrew  @relation(fields: [crewId], references: [id])
-    createdAt   DateTime @default(now())
+    time        DateTime
     crewId      Int
+    gw          GuildWar @relation(fields: [gwNumber], references: [number])
     gwNumber    Int
     totalHonors Int
 
-    @@id([crewId, gwNumber, createdAt])
+    @@id([crewId, gwNumber, time])
 }
 
 model GbfPlayerGWData {
@@ -64,14 +76,14 @@ model GbfPlayerGWData {
     playerId      Int
     gwNumber      Int
     ranking       Int?
-    preliminaries Int?
-    interlude     Int?
-    day1          Int?
-    day2          Int?
-    day3          Int?
-    day4          Int?
+    preliminaries BigInt?
+    interlude     BigInt?
+    day1          BigInt?
+    day2          BigInt?
+    day3          BigInt?
+    day4          BigInt?
 
-    @@id([playerId, gwNumber])
+    @@id([playerId, gwNumber], name: "id")
 }
 
 model GbfEvent {

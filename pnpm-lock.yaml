@@ -16,6 +16,7 @@ specifiers:
   chart.js: ^3.9.1
   chartjs-node-canvas: ^4.1.6
   cors: ^2.8.5
+  croner: ^5.3.5
   discord.js: ^14.7.1
   dotenv: ^16.0.3
   eslint: ^8.29.0
@@ -25,6 +26,7 @@ specifiers:
   node-html-parser: ^6.1.4
   prettier: ^2.8.1
   prisma: ^4.7.1
+  toad-scheduler: ^2.2.0
   tough-cookie: ^4.1.2
   ts-node: ^10.9.1
   ts-node-dev: ^2.0.0
@@ -43,10 +45,12 @@ dependencies:
   chart.js: 3.9.1
   chartjs-node-canvas: 4.1.6_chart.js@3.9.1
   cors: 2.8.5
+  croner: 5.3.5
   discord.js: 14.7.1
   dotenv: 16.0.3
   express: 4.18.2
   node-html-parser: 6.1.4
+  toad-scheduler: 2.2.0
   tough-cookie: 4.1.2
   typescript: 4.9.4
   zod: 3.20.2
@@ -806,6 +810,11 @@ packages:
   /create-require/1.1.1:
     resolution: {integrity: sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==}
     dev: true
+
+  /croner/5.3.5:
+    resolution: {integrity: sha512-VqaplJOVtaGuAxhsw2HM9GG0DLpVi3W9IsV7bKMAC12O7wMIOcZpCYHBw+xkFABzT3xp5MvUqTfbTewCgxgN+A==}
+    engines: {node: '>=6.0'}
+    dev: false
 
   /cross-spawn/7.0.3:
     resolution: {integrity: sha512-iRDPJKUPVEND7dHPO8rkbOnPpyDygcDFtWjpeWNCgy8WP2rXcxXL8TskReQl6OrB2G7+UJrags1q15Fudc7G6w==}
@@ -2219,6 +2228,10 @@ packages:
     dependencies:
       is-number: 7.0.0
     dev: true
+
+  /toad-scheduler/2.2.0:
+    resolution: {integrity: sha512-o/3na7CMVfW40x8H/Vw078GNIR6F7jNmPnuSRY2yVqFIPXRrQttcfRlkQk0dwFiw7fQCqpCGXoC/vo7QtoQMhw==}
+    dev: false
 
   /toidentifier/1.0.1:
     resolution: {integrity: sha512-o5sSPKEkg/DIQNmH43V0/uerLrpzVedkUh8tGNvaeXpfpuwjKenlSox/2O/BTlZUtEe+JG7s5YhEz608PlAHRA==}

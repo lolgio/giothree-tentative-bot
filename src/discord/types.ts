@@ -18,9 +18,14 @@ const GuildWarDay = {
     2: "day2",
     3: "day3",
     4: "day4",
-    99: "interlude",
 };
 export type GuildWarDay = keyof typeof GuildWarDay;
+
+export type GuildWar = {
+    number: number;
+    day: GuildWarDay;
+};
+
 export type TrackedGWData = {
     createdAt: string;
     crewId: number;
