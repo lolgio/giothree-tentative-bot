@@ -286,7 +286,7 @@ const gwRankingSchema = z.object({
     ),
 });
 
-export const updateGWData = async (page: number, pageEnd: number, gw: GuildWar) => {
+export const updateGWData = async (page: number, gw: GuildWar) => {
     const response = (await gbf
         .get(
             `/teamraid0${gw.number}/rest/ranking/${
@@ -354,11 +354,6 @@ export const updateGWData = async (page: number, pageEnd: number, gw: GuildWar) 
         );
         await prisma.$transaction(query);
         console.log("updated page " + page);
-
-        if (pageData.next !== page && pageData.next <= pageEnd) {
-            await updateGWData(pageData.next, pageEnd, gw);
-        }
-        await refreshCookies(response.headers as AxiosResponseHeaders);
     } catch (err) {
         console.log(err);
         return;
