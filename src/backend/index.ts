@@ -60,6 +60,5 @@ void (async () => {
     if (gw) {
         console.log(`Guild war found ${gw.number} - Day ${gw.day}`);
         initScrapeScheduler(gw);
-        //await updateGWData(798, gw);
     }
 })();

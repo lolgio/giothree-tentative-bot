@@ -268,25 +268,25 @@ export const updateCrewMembers = async (crewId: number) => {
     }
 };
 
-export const updateGWData = async (page: number, gw: GuildWar) => {
-    const gwRankingSchema = z.object({
-        count: z.string(),
-        last: z.number().min(1),
-        next: z.number().min(1),
-        prev: z.number().min(1),
-        list: z.array(
-            z.object({
-                id: z
-                    .string()
-                    .min(1)
-                    .transform((val) => parseInt(val)),
-                name: z.string(),
-                point: z.string().transform((val) => parseInt(val)),
-                ranking: z.string().transform((val) => parseInt(val)),
-            })
-        ),
-    });
+const gwRankingSchema = z.object({
+    count: z.string(),
+    last: z.number().min(1),
+    next: z.number().min(1),
+    prev: z.number().min(1),
+    list: z.array(
+        z.object({
+            id: z
+                .string()
+                .min(1)
+                .transform((val) => parseInt(val)),
+            name: z.string(),
+            point: z.string().transform((val) => parseInt(val)),
+            ranking: z.string().transform((val) => parseInt(val)),
+        })
+    ),
+});
 
+export const updateGWData = async (page: number, pageEnd: number, gw: GuildWar) => {
     const response = (await gbf
         .get(
             `/teamraid0${gw.number}/rest/ranking/${
@@ -353,20 +353,19 @@ export const updateGWData = async (page: number, gw: GuildWar) => {
             })
         );
         await prisma.$transaction(query);
-        console.log(`Updated Page: ${page}`);
+        console.log("updated page " + page);
 
-        if (pageData.next !== page && pageData.next <= 800) {
-            await updateGWData(pageData.next, gw);
+        if (pageData.next !== page && pageData.next <= pageEnd) {
+            await updateGWData(pageData.next, pageEnd, gw);
         }
         await refreshCookies(response.headers as AxiosResponseHeaders);
-        await updateCrewTracking(gw);
     } catch (err) {
         console.log(err);
         return;
     }
 };
 
-const updateCrewTracking = async (gw: GuildWar): Promise<void> => {
+export const updateCrewTracking = async (gw: GuildWar): Promise<void> => {
     const time = new Date(
         Math.floor((Date.now() - 1000 * 60 * 5) / (1000 * 60 * 20)) * 1000 * 60 * 20 + 1000 * 60 * 5
     );
