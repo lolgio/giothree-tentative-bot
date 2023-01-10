@@ -61,14 +61,19 @@ model GbfCrewGWData {
 }
 
 model GbfTrackedCrewData {
-    crew        GbfCrew  @relation(fields: [crewId], references: [id])
-    time        DateTime
-    crewId      Int
-    gw          GuildWar @relation(fields: [gwNumber], references: [number])
-    gwNumber    Int
-    totalHonors Int
+    crew          GbfCrew  @relation(fields: [crewId], references: [id])
+    time          DateTime
+    crewId        Int
+    gw            GuildWar @relation(fields: [gwNumber], references: [number])
+    gwNumber      Int
+    ranking       Int?
+    preliminaries BigInt?
+    day1          BigInt?
+    day2          BigInt?
+    day3          BigInt?
+    day4          BigInt?
 
-    @@id([crewId, gwNumber, time])
+    @@id([crewId, gwNumber, time], name: "id")
 }
 
 model GbfPlayerGWData {

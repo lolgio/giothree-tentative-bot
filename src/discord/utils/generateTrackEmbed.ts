@@ -1,17 +1,22 @@
 import { EmbedBuilder, AttachmentBuilder } from "discord.js";
 import { ChartJSNodeCanvas } from "chartjs-node-canvas";
 import { t } from "../trpcclient";
-import { TrackedGWData } from "../types";
+import { GuildWarDay, TrackedGWData } from "../types";
 
-const calculateSpeed = (data: TrackedGWData[]) => {
+type ChartData = {
+    time: number;
+    totalHonors: number;
+};
+
+const calculateSpeed = (data: ChartData[]) => {
     const speedData: { time: number; speed: number }[] = [];
 
     for (let i = 0; i < data.length - 1; i++) {
-        const time = new Date(data[i + 1].createdAt).getTime();
+        const time = new Date(data[i + 1].time).getTime();
         const speed = Math.max(
             0,
             (data[i + 1].totalHonors - data[i].totalHonors) /
-                ((time - new Date(data[i].createdAt).getTime()) / 1000 / 60 / 60)
+                ((time - new Date(data[i].time).getTime()) / 1000 / 60 / 60)
         );
         speedData.push({ time, speed });
     }
@@ -22,7 +27,7 @@ const calculateSpeed = (data: TrackedGWData[]) => {
 type SpeedData = { time: number; speed: number }[];
 
 const generateChart = async (
-    gwData: TrackedGWData[],
+    gwData: ChartData[],
     speedData: SpeedData
 ): Promise<AttachmentBuilder> => {
     const renderer = new ChartJSNodeCanvas({ width: 800, height: 400 });
@@ -30,12 +35,11 @@ const generateChart = async (
         type: "line",
         data: {
             labels: gwData.map((d) =>
-                new Date(d.createdAt).toLocaleString("en-US", {
+                new Date(d.time).toLocaleString("en-US", {
                     timeZone: "Asia/Tokyo",
                     hour12: false,
                     hour: "numeric",
                     minute: "numeric",
-                    second: "numeric",
                 })
             ),
             datasets: [
@@ -79,14 +83,29 @@ const generateChart = async (
 
 export const generateEmbed = async (
     crewId: number,
-    gwNumber: number
+    gwNumber: number,
+    day: GuildWarDay
 ): Promise<{ embeds: EmbedBuilder[]; files: AttachmentBuilder[] }> => {
     const embed = new EmbedBuilder();
     const crew = await t.gbf.getCrew.query(crewId);
-    let gwData = await t.gbf.getTrackedGWData.query(crewId);
+    let gwData: TrackedGWData = await t.gbf.getTrackedGWData.query(crewId);
     gwData = gwData.filter((d) => d.gwNumber === gwNumber);
-    const speedData = calculateSpeed(gwData);
-    const chart = await generateChart(gwData, speedData);
+
+    const dayData: ChartData[] = gwData.map((d) => ({
+        time: d.time,
+        totalHonors:
+            day === 0
+                ? d.preliminaries
+                : day === 1
+                ? d.day1
+                : day === 2
+                ? d.day2
+                : day === 3
+                ? d.day3
+                : d.day4,
+    }));
+    const speedData = calculateSpeed(dayData);
+    const chart = await generateChart(dayData, speedData);
 
     const speedAverage = speedData.reduce((a, b) => a + b.speed, 0) / speedData.length;
     const speedLastHour = speedData.filter((d) => d.time > Date.now() - 1000 * 60 * 60);
@@ -100,7 +119,7 @@ export const generateEmbed = async (
         .addFields(
             {
                 name: "Honors (Total)",
-                value: gwData[gwData.length - 1].totalHonors.toLocaleString(),
+                value: dayData[dayData.length - 1].totalHonors.toLocaleString(),
             },
             {
                 name: "Average Speed (Total)",

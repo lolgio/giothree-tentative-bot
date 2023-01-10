@@ -26,12 +26,6 @@ export type GuildWar = {
     day: GuildWarDay;
 };
 
-export type TrackedGWData = {
-    createdAt: string;
-    crewId: number;
-    gwNumber: number;
-    totalHonors: number;
-};
-
 //trpc types
 export type User = RouterOutput["user"]["getUser"];
+export type TrackedGWData = RouterOutput["gbf"]["getTrackedGWData"];

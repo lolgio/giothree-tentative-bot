@@ -18,6 +18,8 @@ interface GbfInstance extends AxiosInstance {
     uid?: number;
 }
 
+const trackedCrews = [1470346];
+
 let gbf: GbfInstance;
 let config: AxiosRequestConfig;
 export const initializeAxiosGbf = async () => {
@@ -315,10 +317,33 @@ export const updateGWData = async (page: number, gw: GuildWar) => {
                         gwNumber: gw.number,
                     },
                 },
-                update: {
-                    preliminaries: crew.point,
-                    ranking: crew.ranking,
-                },
+                update:
+                    gw.day === 0
+                        ? {
+                              preliminaries: crew.point,
+                              ranking: crew.ranking,
+                          }
+                        : gw.day === 1
+                        ? {
+                              day1: crew.point,
+                              ranking: crew.ranking,
+                          }
+                        : gw.day === 2
+                        ? {
+                              day2: crew.point,
+                              ranking: crew.ranking,
+                          }
+                        : gw.day === 3
+                        ? {
+                              day3: crew.point,
+                              ranking: crew.ranking,
+                          }
+                        : gw.day === 4
+                        ? {
+                              day4: crew.point,
+                              ranking: crew.ranking,
+                          }
+                        : {},
                 create: {
                     crewId: crew.id,
                     gwNumber: gw.number,
@@ -333,8 +358,42 @@ export const updateGWData = async (page: number, gw: GuildWar) => {
         if (pageData.next !== page && pageData.next <= 800) {
             await updateGWData(pageData.next, gw);
         }
+        await refreshCookies(response.headers as AxiosResponseHeaders);
+        await updateCrewTracking(gw);
     } catch (err) {
         console.log(err);
         return;
+    }
+};
+
+const updateCrewTracking = async (gw: GuildWar): Promise<void> => {
+    const time = new Date(
+        Math.floor((Date.now() - 1000 * 60 * 5) / (1000 * 60 * 20)) * 1000 * 60 * 20 + 1000 * 60 * 5
+    );
+    for (let i = 0; i < trackedCrews.length; i++) {
+        const data = await prisma.gbfCrewGWData.findUnique({
+            where: {
+                id: {
+                    crewId: trackedCrews[i],
+                    gwNumber: gw.number,
+                },
+            },
+        });
+        if (data) {
+            await prisma.gbfTrackedCrewData.upsert({
+                where: {
+                    id: {
+                        crewId: trackedCrews[i],
+                        gwNumber: gw.number,
+                        time: time,
+                    },
+                },
+                update: {},
+                create: {
+                    time: time,
+                    ...data,
+                },
+            });
+        }
     }
 };

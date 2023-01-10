@@ -1,5 +1,5 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder, EmbedBuilder } from "discord.js";
-import { SlashCommand } from "../types";
+import { GuildWarDay, SlashCommand } from "../types";
 import { t } from "../trpcclient";
 import { TRPCClientError } from "@trpc/client";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime";
@@ -64,6 +64,9 @@ export const command: SlashCommand = {
                         .setName("gw_number")
                         .setDescription("The Guild War Number.")
                         .setRequired(true)
+                )
+                .addNumberOption((option) =>
+                    option.setName("day").setDescription("The Guild War Day.").setRequired(true)
                 )
         ) as SlashCommandBuilder,
 
@@ -190,7 +193,8 @@ export const command: SlashCommand = {
                 await interaction.deferReply({ ephemeral: true });
                 const reply = await generateEmbed(
                     interaction.options.getNumber("crew_id") ?? 0,
-                    interaction.options.getNumber("gw_number") ?? 0
+                    interaction.options.getNumber("gw_number") ?? 0,
+                    (interaction.options.getNumber("day") ?? 0) as GuildWarDay
                 );
 
                 await interaction.editReply(reply);

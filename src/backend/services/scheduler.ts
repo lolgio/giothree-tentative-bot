@@ -1,16 +1,14 @@
 import { ToadScheduler, AsyncTask, CronJob } from "toad-scheduler";
-import { updateCrewData } from "./gbf_collection";
+import { updateGWData } from "./gbf_collection";
+import { GuildWar } from "../../discord/types";
 
-const trackedCrews = [1470346];
-
-export const initScrapeScheduler = () => {
+export const initScrapeScheduler = (gw: GuildWar) => {
     const scheduler = new ToadScheduler();
+
     const task = new AsyncTask("crewPageScrape", async () => {
-        const promises = trackedCrews.map(async (crewId) => {
-            await updateCrewData(crewId);
-            console.log(`Updated crew data for: ${crewId}`);
-        });
-        await Promise.all(promises);
+        console.log("Updating guild war data...");
+        await updateGWData(1, gw);
+        console.log("Succesfully Updated guild war data.");
     });
     const job = new CronJob({ cronExpression: "5,25,45 * * * *" }, task, {
         preventOverrun: true,

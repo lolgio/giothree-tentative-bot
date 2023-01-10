@@ -54,6 +54,34 @@ export const gbfRouter = t.router({
         return events;
     }),
     getTrackedGWData: t.procedure.input(z.number()).query(async (req) => {
+        const schema = z.array(
+            z.object({
+                time: z.date().transform((val) => val.getTime()),
+                crewId: z.number(),
+                gwNumber: z.number(),
+                ranking: z.number(),
+                preliminaries: z
+                    .bigint()
+                    .nullable()
+                    .transform((val) => (val ? Number(val) : 0)),
+                day1: z
+                    .bigint()
+                    .nullable()
+                    .transform((val) => (val ? Number(val) : 0)),
+                day2: z
+                    .bigint()
+                    .nullable()
+                    .transform((val) => (val ? Number(val) : 0)),
+                day3: z
+                    .bigint()
+                    .nullable()
+                    .transform((val) => (val ? Number(val) : 0)),
+                day4: z
+                    .bigint()
+                    .nullable()
+                    .transform((val) => (val ? Number(val) : 0)),
+            })
+        );
         const data = await prisma.gbfTrackedCrewData.findMany({
             where: {
                 crewId: req.input,
@@ -66,6 +94,6 @@ export const gbfRouter = t.router({
                 message: "No data found!",
             });
         }
-        return data;
+        return schema.parse(data);
     }),
 });
