@@ -68,6 +68,12 @@ export const command: SlashCommand = {
                 .addNumberOption((option) =>
                     option.setName("day").setDescription("The Guild War Day.").setRequired(true)
                 )
+                .addNumberOption((option) =>
+                    option
+                        .setName("compare_id")
+                        .setDescription("Crew ID you want to compare against")
+                        .setRequired(false)
+                )
         ) as SlashCommandBuilder,
 
     async execute(interaction: ChatInputCommandInteraction) {
@@ -194,7 +200,8 @@ export const command: SlashCommand = {
                 const reply = await generateEmbed(
                     interaction.options.getNumber("crew_id") ?? 0,
                     interaction.options.getNumber("gw_number") ?? 0,
-                    (interaction.options.getNumber("day") ?? 0) as GuildWarDay
+                    (interaction.options.getNumber("day") ?? 0) as GuildWarDay,
+                    interaction.options.getNumber("compare_id") ?? 0
                 );
 
                 await interaction.editReply(reply);
