@@ -53,6 +53,21 @@ export const gbfRouter = t.router({
         }
         return events;
     }),
+    getGuildWar: t.procedure.input(z.number()).query(async (req) => {
+        const gw = await prisma.guildWar.findUnique({
+            where: {
+                number: req.input,
+            },
+        });
+
+        if (!gw) {
+            throw new TRPCError({
+                code: "NOT_FOUND",
+                message: `No Guild war number ${req.input} found!`,
+            });
+        }
+        return gw;
+    }),
     getTrackedGWData: t.procedure.input(z.number()).query(async (req) => {
         const schema = z.array(
             z.object({

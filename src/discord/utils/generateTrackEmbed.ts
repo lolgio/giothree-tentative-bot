@@ -52,7 +52,7 @@ const generateChart = async (
                 },
                 {
                     label: "Speed",
-                    data: [0].concat(speedData.map((d) => d.speed)),
+                    data: [0, ...speedData.map((d) => d.speed)],
                     yAxisID: "y1",
                     borderColor: "#f7b26d",
                     backgroundColor: "#f7b26d",
@@ -88,8 +88,24 @@ export const generateEmbed = async (
 ): Promise<{ embeds: EmbedBuilder[]; files: AttachmentBuilder[] }> => {
     const embed = new EmbedBuilder();
     const crew = await t.gbf.getCrew.query(crewId);
+    const guildWar = await t.gbf.getGuildWar.query(65);
+    const finalsStart = Date.parse(guildWar.finalsStart);
     let gwData: TrackedGWData = await t.gbf.getTrackedGWData.query(crewId);
-    gwData = gwData.filter((d) => d.gwNumber === gwNumber);
+
+    gwData = gwData.filter((d) => {
+        if (day === 0) {
+            return d.gwNumber === gwNumber && d.time < finalsStart;
+        } else {
+            return (
+                d.gwNumber === gwNumber &&
+                d.time < finalsStart + 24 * 60 * 60 * 1000 * day &&
+                d.time >= finalsStart + 24 * 60 * 60 * 1000 * (day - 1)
+            );
+        }
+    });
+    if (!gwData) {
+        throw new Error(`No Tracked Data found for ${crewId} in Guild war ${gwNumber}`);
+    }
 
     const dayData: ChartData[] = gwData.map((d) => ({
         time: d.time,

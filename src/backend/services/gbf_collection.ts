@@ -18,7 +18,7 @@ interface GbfInstance extends AxiosInstance {
     uid?: number;
 }
 
-const trackedCrews = [1470346];
+const trackedCrews = [1470346, 1791427];
 
 let gbf: GbfInstance;
 let config: AxiosRequestConfig;
@@ -353,7 +353,6 @@ export const updateGWData = async (page: number, gw: GuildWar) => {
             })
         );
         await prisma.$transaction(query);
-        console.log("updated page " + page);
     } catch (err) {
         console.log(err);
         return;
@@ -389,5 +388,91 @@ export const updateCrewTracking = async (gw: GuildWar): Promise<void> => {
                 },
             });
         }
+    }
+};
+
+const gwIndividualSchema = z.object({
+    list: z.array(
+        z.object({
+            rank: z.string().transform((val) => parseInt(val)),
+            user_id: z.string().transform((val) => parseInt(val)),
+            level: z.string().transform((val) => parseInt(val)),
+            name: z.string(),
+            point: z.string().transform((val) => parseInt(val)),
+        })
+    ),
+});
+
+export const updateIndividualGWData = async (page: number, gw: GuildWar) => {
+    const response = (await gbf
+        .get(
+            `/teamraid0${gw.number}/rest_ranking_user/detail/${page}/0?_=${Date.now()}&t=${
+                Date.now() + 100
+            }&uid=${gbf.uid}`
+        )
+        .catch((err) => {
+            console.log(err);
+            return;
+        })) as AxiosResponse;
+
+    try {
+        const pageData = gwIndividualSchema.parse(response.data);
+
+        await prisma.gbfPlayer.createMany({
+            data: pageData.list.map((player) => ({
+                id: player.user_id,
+                nickname: player.name,
+                level: player.level,
+            })),
+            skipDuplicates: true,
+        });
+
+        const query = pageData.list.map((player) =>
+            prisma.gbfPlayerGWData.upsert({
+                where: {
+                    id: {
+                        playerId: player.user_id,
+                        gwNumber: gw.number,
+                    },
+                },
+                update:
+                    gw.day === 0
+                        ? {
+                              preliminaries: player.point,
+                              ranking: player.rank,
+                          }
+                        : gw.day === 1
+                        ? {
+                              day1: player.point,
+                              ranking: player.rank,
+                          }
+                        : gw.day === 2
+                        ? {
+                              day2: player.point,
+                              ranking: player.rank,
+                          }
+                        : gw.day === 3
+                        ? {
+                              day3: player.point,
+                              ranking: player.rank,
+                          }
+                        : gw.day === 4
+                        ? {
+                              day4: player.point,
+                              ranking: player.rank,
+                          }
+                        : {},
+                create: {
+                    playerId: player.user_id,
+                    gwNumber: gw.number,
+                    preliminaries: player.point,
+                    ranking: player.rank,
+                },
+            })
+        );
+        await prisma.$transaction(query);
+    } catch (err) {
+        console.log(err);
+        return;
     }
 };

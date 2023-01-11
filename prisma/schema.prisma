@@ -82,7 +82,6 @@ model GbfPlayerGWData {
     gwNumber      Int
     ranking       Int?
     preliminaries BigInt?
-    interlude     BigInt?
     day1          BigInt?
     day2          BigInt?
     day3          BigInt?

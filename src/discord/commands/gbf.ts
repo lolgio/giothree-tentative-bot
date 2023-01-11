@@ -199,8 +199,8 @@ export const command: SlashCommand = {
 
                 await interaction.editReply(reply);
             } catch (err) {
-                if (err instanceof TRPCClientError) {
-                    await interaction.editReply("No chart found!");
+                if (err instanceof Error) {
+                    await interaction.editReply(err.message);
                 }
             }
         }
