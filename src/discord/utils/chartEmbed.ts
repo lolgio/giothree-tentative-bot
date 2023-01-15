@@ -1,7 +1,8 @@
 import { EmbedBuilder, AttachmentBuilder } from "discord.js";
 import { ChartJSNodeCanvas } from "chartjs-node-canvas";
 import { t } from "../trpcclient";
-import { GuildWarDay, TrackedGWData } from "../types";
+import { TrackedGWData } from "../types";
+import { GuildWarDay } from "../../shared/types";
 
 type ChartData = {
     time: number;
@@ -45,16 +46,7 @@ const convertToChartData = async (
 
     const dayData: ChartData[] = gwData.map((d) => ({
         time: d.time,
-        totalHonors:
-            day === 0
-                ? d.preliminaries
-                : day === 1
-                ? d.day1
-                : day === 2
-                ? d.day2
-                : day === 3
-                ? d.day3
-                : d.day4,
+        totalHonors: d.totalHonors,
     }));
 
     return dayData;
@@ -211,9 +203,13 @@ export const generateEmbed = async (
     const crew = await t.gbf.getCrew.query(crewId);
     const gwData: TrackedGWData = await t.gbf.getTrackedGWData.query(crewId);
     const dayData = await convertToChartData(gwData, day, gwNumber);
+    const initialHonor = dayData[0].totalHonors;
+    dayData.forEach((d) => (d.totalHonors -= initialHonor));
     const speedData = calculateSpeed(dayData);
 
-    const speedAverage = speedData.reduce((a, b) => a + b.speed, 0) / speedData.length;
+    const speedAverage =
+        (dayData[0].totalHonors - dayData[dayData.length - 1].totalHonors) /
+        ((dayData[0].time - dayData[dayData.length - 1].time) / 1000 / 60 / 60);
     const speedLastHour = speedData.filter((d) => d.time > Date.now() - 1000 * 60 * 60);
     const speedAverageLastHour =
         speedLastHour.reduce((a, b) => a + b.speed, 0) / speedLastHour.length;
@@ -224,8 +220,8 @@ export const generateEmbed = async (
         .setImage("attachment://chart.png");
     if (compareId) {
         embed.addFields({
-            name: crew.name,
-            value: " ",
+            name: " ",
+            value: `**${crew.name}**`,
         });
     }
     embed.addFields(
@@ -251,6 +247,9 @@ export const generateEmbed = async (
         const crewCompare = await t.gbf.getCrew.query(compareId);
         const gwDataCompare: TrackedGWData = await t.gbf.getTrackedGWData.query(compareId);
         const dayDataCompare = await convertToChartData(gwDataCompare, day, gwNumber);
+        console.log(dayDataCompare);
+        const initialHonorCmp = dayDataCompare[0].totalHonors;
+        dayDataCompare.forEach((d) => (d.totalHonors -= initialHonorCmp));
 
         const speedDataCompare = calculateSpeed(dayDataCompare);
         chart = await generateCompareChart(
@@ -263,7 +262,12 @@ export const generateEmbed = async (
         );
 
         const speedAverageCmp =
-            speedDataCompare.reduce((a, b) => a + b.speed, 0) / speedDataCompare.length;
+            (dayDataCompare[0].totalHonors -
+                dayDataCompare[dayDataCompare.length - 1].totalHonors) /
+            ((dayDataCompare[0].time - dayDataCompare[dayDataCompare.length - 1].time) /
+                1000 /
+                60 /
+                60);
         const speedLastHourCmp = speedDataCompare.filter(
             (d) => d.time > Date.now() - 1000 * 60 * 60
         );
@@ -273,8 +277,8 @@ export const generateEmbed = async (
         embed.setTitle(`GW Data for: ${crew.name} vs ${crewCompare.name}`);
         embed.addFields(
             {
-                name: crewCompare.name,
-                value: " ",
+                name: " ",
+                value: `**${crewCompare.name}**`,
             },
             {
                 name: "Honors",

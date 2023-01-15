@@ -3,7 +3,7 @@ import { GuildWarDay, SlashCommand } from "../types";
 import { t } from "../trpcclient";
 import { TRPCClientError } from "@trpc/client";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime";
-import { generateEmbed } from "../utils/generateTrackEmbed";
+import { generateEmbed } from "../utils/chartEmbed";
 
 export const command: SlashCommand = {
     data: new SlashCommandBuilder()

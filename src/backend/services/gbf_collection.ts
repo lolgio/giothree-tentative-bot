@@ -9,7 +9,7 @@ import { wrapper } from "axios-cookiejar-support";
 import { ZodError, z } from "zod";
 import * as dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
-import { GuildWar, GuildWarDay } from "../../discord/types";
+import { GuildWar, GuildWarDay } from "../../shared/types";
 dotenv.config({ path: __dirname + "/../../../.env" });
 
 const prisma = new PrismaClient();
@@ -17,8 +17,6 @@ const prisma = new PrismaClient();
 interface GbfInstance extends AxiosInstance {
     uid?: number;
 }
-
-const trackedCrews = [1470346, 1791427];
 
 let gbf: GbfInstance;
 let config: AxiosRequestConfig;
@@ -57,9 +55,13 @@ export const initializeAxiosGbf = async () => {
     gbf.uid = Number(account.uid);
 };
 
-export const getGWDay = async (): Promise<GuildWar | null> => {
+let gw: GuildWar = {
+    number: -1,
+    day: 0,
+};
+export const updateGWDay = async (): Promise<void> => {
     const now = new Date();
-    const gw = await prisma.guildWar.findFirst({
+    const gwData = await prisma.guildWar.findFirst({
         where: {
             prelimStart: {
                 lte: now,
@@ -70,23 +72,34 @@ export const getGWDay = async (): Promise<GuildWar | null> => {
         },
     });
 
-    if (!gw) {
-        return null;
+    if (!gwData) {
+        gw = {
+            number: -1,
+            day: 0,
+        };
+        return;
     }
 
-    if (now < gw.finalsStart) {
-        return {
+    if (now < gwData.finalsStart) {
+        gw = {
             number: gw.number,
             day: 0,
         };
+        return;
     } else {
         const day =
-            Math.floor((now.getTime() - gw.finalsStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-        return {
-            number: gw.number,
+            Math.floor((now.getTime() - gwData.finalsStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        gw = {
+            number: gwData.number,
             day: day as GuildWarDay,
         };
+        if (day > 4) gw.day = 4;
+        return;
     }
+};
+
+export const getGuildWar = (): GuildWar | null => {
+    return gw.number !== -1 ? gw : null;
 };
 
 export const getGameVersion = async () => {
@@ -286,7 +299,9 @@ const gwRankingSchema = z.object({
     ),
 });
 
-export const updateGWData = async (page: number, gw: GuildWar) => {
+export const updateGWData = async (page: number) => {
+    if (gw.number === -1) return;
+
     const response = (await gbf
         .get(
             `/teamraid0${gw.number}/rest/ranking/${
@@ -309,7 +324,7 @@ export const updateGWData = async (page: number, gw: GuildWar) => {
             skipDuplicates: true,
         });
 
-        const query = pageData.list.map((crew) =>
+        const dataQuery = pageData.list.map((crew) =>
             prisma.gbfCrewGWData.upsert({
                 where: {
                     id: {
@@ -352,42 +367,27 @@ export const updateGWData = async (page: number, gw: GuildWar) => {
                 },
             })
         );
-        await prisma.$transaction(query);
+
+        // update tracking for top 8k crews
+        if (page <= 800) {
+            const time = new Date(
+                Math.floor((Date.now() - 1000 * 60 * 5) / (1000 * 60 * 20)) * 1000 * 60 * 20 +
+                    1000 * 60 * 5
+            );
+            await prisma.gbfTrackedCrewData.createMany({
+                data: pageData.list.map((crew) => ({
+                    crewId: crew.id,
+                    gwNumber: gw.number,
+                    time: time,
+                    totalHonors: crew.point,
+                })),
+            });
+        }
+
+        await prisma.$transaction(dataQuery);
     } catch (err) {
         console.log(err);
         return;
-    }
-};
-
-export const updateCrewTracking = async (gw: GuildWar): Promise<void> => {
-    const time = new Date(
-        Math.floor((Date.now() - 1000 * 60 * 5) / (1000 * 60 * 20)) * 1000 * 60 * 20 + 1000 * 60 * 5
-    );
-    for (let i = 0; i < trackedCrews.length; i++) {
-        const data = await prisma.gbfCrewGWData.findUnique({
-            where: {
-                id: {
-                    crewId: trackedCrews[i],
-                    gwNumber: gw.number,
-                },
-            },
-        });
-        if (data) {
-            await prisma.gbfTrackedCrewData.upsert({
-                where: {
-                    id: {
-                        crewId: trackedCrews[i],
-                        gwNumber: gw.number,
-                        time: time,
-                    },
-                },
-                update: {},
-                create: {
-                    time: time,
-                    ...data,
-                },
-            });
-        }
     }
 };
 
@@ -403,7 +403,9 @@ const gwIndividualSchema = z.object({
     ),
 });
 
-export const updateIndividualGWData = async (page: number, gw: GuildWar) => {
+export const updateIndividualGWData = async (page: number) => {
+    if (gw.number === -1) return;
+
     const response = (await gbf
         .get(
             `/teamraid0${gw.number}/rest_ranking_user/detail/${page}/0?_=${Date.now()}&t=${

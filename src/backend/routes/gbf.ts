@@ -75,23 +75,7 @@ export const gbfRouter = t.router({
                 crewId: z.number(),
                 gwNumber: z.number(),
                 ranking: z.number(),
-                preliminaries: z
-                    .bigint()
-                    .nullable()
-                    .transform((val) => (val ? Number(val) : 0)),
-                day1: z
-                    .bigint()
-                    .nullable()
-                    .transform((val) => (val ? Number(val) : 0)),
-                day2: z
-                    .bigint()
-                    .nullable()
-                    .transform((val) => (val ? Number(val) : 0)),
-                day3: z
-                    .bigint()
-                    .nullable()
-                    .transform((val) => (val ? Number(val) : 0)),
-                day4: z
+                totalHonors: z
                     .bigint()
                     .nullable()
                     .transform((val) => (val ? Number(val) : 0)),
@@ -101,6 +85,9 @@ export const gbfRouter = t.router({
             where: {
                 crewId: req.input,
             },
+            orderBy: {
+                time: "asc",
+            },
         });
 
         if (!data) {
@@ -109,6 +96,7 @@ export const gbfRouter = t.router({
                 message: "No data found!",
             });
         }
+
         return schema.parse(data);
     }),
 });

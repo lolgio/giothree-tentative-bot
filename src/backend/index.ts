@@ -4,7 +4,7 @@ import { userRouter } from "./routes/user";
 import * as trpcExpress from "@trpc/server/adapters/express";
 import { updateEventData } from "./services/wiki_collection";
 import { gbfRouter } from "./routes/gbf";
-import { getGWDay, initializeAxiosGbf } from "./services/gbf_collection";
+import { initializeAxiosGbf } from "./services/gbf_collection";
 import { initScrapeScheduler } from "./services/scheduler";
 
 const app = express();
@@ -55,10 +55,5 @@ void (async () => {
     });
 
     await updateEventData();
-
-    const gw = await getGWDay();
-    if (gw) {
-        console.log(`Guild war found ${gw.number} - Day ${gw.day}`);
-        initScrapeScheduler(gw);
-    }
+    await initScrapeScheduler();
 })();
